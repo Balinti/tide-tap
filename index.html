@@ -3,729 +3,996 @@
 <head>
 <meta charset="UTF-8">
 <title>Tide Tap - Free HTML5 Game</title>
-<meta name="description" content="Play Tide Tap - Tap to the ocean beat while dodging reversed controls to ride the waves.">
+<meta name="description" content="Play Tide Tap - Tap to the beat controlling waves that propel a submarine faster underwater.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0a1628">
-<link rel="canonical" href="https://balinti.github.io/tide-tap/">
+<meta name="theme-color" content="#0a0e1a">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Tide Tap - Free HTML5 Game">
-<meta property="og:description" content="Ride the crest, chain combos, dodge rocks. A hyper-casual HTML5 ocean game.">
+<meta property="og:description" content="Play Tide Tap - Tap to the beat controlling waves that propel a submarine faster underwater.">
 <meta property="og:url" content="https://balinti.github.io/tide-tap/">
-<meta property="og:image" content="https://balinti.github.io/tide-tap/og.jpg">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image" content="https://balinti.github.io/tide-tap/preview.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Tide Tap - Free HTML5 Game">
-<meta name="twitter:description" content="Ride the crest, chain combos, dodge rocks. A hyper-casual HTML5 ocean game.">
-<meta name="twitter:image" content="https://balinti.github.io/tide-tap/og.jpg">
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"VideoGame","name":"Tide Tap: Crest Chain","url":"https://balinti.github.io/tide-tap/","image":"https://balinti.github.io/tide-tap/og.jpg","description":"Ride the crest, chain combos, dodge rocks. A hyper-casual HTML5 ocean game.","genre":"Casual","playMode":"SinglePlayer","applicationCategory":"Game","operatingSystem":"Web Browser"}
-</script>
+<meta name="twitter:description" content="Tap to the beat controlling waves that propel a submarine faster underwater.">
+<meta name="twitter:image" content="https://balinti.github.io/tide-tap/preview.png">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4099346100621490" crossorigin="anonymous"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Tide Tap",
+  "description": "Tap to the beat controlling waves that propel a submarine faster underwater.",
+  "url": "https://balinti.github.io/tide-tap/",
+  "genre": "Hyper-casual",
+  "gamePlatform": "Web Browser",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;background:#0a1628;font-family:'Segoe UI',system-ui,sans-serif;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none}
-#app{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0a1628 0%,#0d1f3c 50%,#0a1628 100%)}
-canvas{display:block;max-width:420px;max-height:750px;width:100%;height:100%;object-fit:contain}
-#share-overlay{position:fixed;display:none;z-index:10;bottom:20%;left:50%;transform:translateX(-50%)}
-#share-overlay button{padding:10px 24px;border:2px solid rgba(255,255,255,0.5);border-radius:24px;background:rgba(10,22,40,0.85);color:#fff;font-size:15px;font-family:inherit;cursor:pointer;backdrop-filter:blur(6px);transition:all .2s}
-#share-overlay button:hover{background:rgba(30,60,100,0.9);border-color:#fff}
-#copied-toast{position:fixed;bottom:12%;left:50%;transform:translateX(-50%);background:rgba(0,200,120,0.9);color:#fff;padding:8px 20px;border-radius:16px;font-size:14px;display:none;z-index:11;pointer-events:none}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#040810;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',Arial,sans-serif;}
+#wrap{position:relative;width:100%;max-width:420px;height:100vh;max-height:750px;overflow:hidden;}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:pointer;}
+#hud{position:absolute;top:0;left:0;width:100%;pointer-events:none;padding:14px 18px 0;}
+#hud-score{font-size:28px;font-weight:700;color:#fff;text-shadow:0 0 12px #0ff8;letter-spacing:1px;}
+#hud-best{font-size:13px;color:#7af6;margin-top:2px;}
+#hud-bars{display:flex;gap:10px;margin-top:8px;align-items:center;}
+#oxy-label{font-size:11px;color:#7af;text-transform:uppercase;letter-spacing:1px;width:50px;}
+#oxy-bar-bg{flex:1;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;}
+#oxy-bar{height:100%;border-radius:4px;transition:width .1s linear,background-color .3s;}
+#combo-badge{position:absolute;top:14px;right:18px;font-size:14px;font-weight:700;color:#ff0;text-shadow:0 0 10px #ff08;opacity:0;transition:opacity .3s;}
 </style>
 </head>
 <body>
-<div id="app"><canvas id="gc"></canvas></div>
-<div id="share-overlay"><button id="share-btn">Share Score</button></div>
-<div id="copied-toast">Copied to clipboard!</div>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="hud">
+    <div id="hud-score">0</div>
+    <div id="hud-best">Best: 0</div>
+    <div id="hud-bars">
+      <div id="oxy-label">O2</div>
+      <div id="oxy-bar-bg"><div id="oxy-bar" style="width:100%;background:#0ff;"></div></div>
+    </div>
+  </div>
+  <div id="combo-badge">x1</div>
+</div>
 <script>
-'use strict';
 (function(){
+"use strict";
 
-const VW=420,VH=750;
-const canvas=document.getElementById('gc');
-const ctx=canvas.getContext('2d');
-const shareOverlay=document.getElementById('share-overlay');
-const shareBtn=document.getElementById('share-btn');
-const copiedToast=document.getElementById('copied-toast');
+// ── Constants ────────────────────────────────────────────────────────────────
+const SEG_W = 24;
+const BASE_BPM = 72;
+const MAX_BPM = 140;
+const BASE_SPEED = 2.2;
+const MAX_SPEED = 7.5;
+const BASE_GAP = 180;
+const MIN_GAP = 90;
+const OXY_MAX = 100;
+const OXY_DRAIN_BASE = 1.8;
+const OXY_DRAIN_MISS = 3.5;
+const OXY_REFILL_PERFECT = 4;
+const SUB_R = 14;
+const MINE_R = 16;
+const TIMING_WINDOW_PERFECT = 0.18;
+const TIMING_WINDOW_GOOD = 0.32;
 
-// Hi-DPI
-const DPR=Math.min(window.devicePixelRatio||1,2);
-function resizeCanvas(){
-  const app=document.getElementById('app');
-  const aw=app.clientWidth,ah=app.clientHeight;
-  const aspect=VW/VH;
-  let w,h;
-  if(aw/ah>aspect){h=ah;w=h*aspect}else{w=aw;h=w/aspect}
-  w=Math.min(w,420);h=Math.min(h,750);
-  canvas.style.width=w+'px';
-  canvas.style.height=h+'px';
-  canvas.width=Math.round(w*DPR);
-  canvas.height=Math.round(h*DPR);
-  ctx.setTransform(DPR*w/VW,0,0,DPR*h/VH,0,0);
+// ── URL challenge param ──────────────────────────────────────────────────────
+const urlParams = new URLSearchParams(location.search);
+const challengeScore = parseInt(urlParams.get('challenge')) || 0;
+
+// ── Audio ────────────────────────────────────────────────────────────────────
+let audioCtx = null;
+function getAudio(){
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
 }
-resizeCanvas();
-window.addEventListener('resize',resizeCanvas);
-
-// --- RNG ---
-function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-function dateToSeed(d){return(d.getFullYear()*10000+d.getMonth()*100+d.getDate())|0}
-const urlP=new URLSearchParams(window.location.search);
-const urlScore=parseInt(urlP.get('score'))||0;
-const urlMult=parseInt(urlP.get('mult'))||0;
-const urlSeed=urlP.get('seed')?parseInt(urlP.get('seed')):null;
-const today=new Date();
-const dailySeed=urlSeed!==null?urlSeed:dateToSeed(today);
-let rng=mulberry32(dailySeed);
-
-// --- State ---
-let state='start';
-let score=0,bestScore=0,combo=0,mult=1,missStreak=0;
-let speed=1,baseSpeed=1.2,scroll=0;
-let gameTime=0,lastTime=0,accumulator=0;
-const STEP=1/120;
-let shakeX=0,shakeY=0,shakeMag=0,shakeDecay=0.92;
-let vignetteAlpha=0,desatFlash=0;
-let hueShift=0;
-
-// Surfer
-const surferX=0.28*VW;
-let surferY=VH*0.5,surferAngle=0;
-
-// Rings
-let rings=[];
-let ringSpawnTimer=0;
-let ringInterval=1.5;
-
-// Rocks
-let rocks=[];
-let rockSpawnTimer=0;
-let rockInterval=4;
-
-// Particles
-let particles=[];
-
-// Foam particles (decorative)
-let foamParticles=[];
-
-// Load best
-const LS_KEY='ttcc_highscore_v1';
-try{bestScore=parseInt(localStorage.getItem(LS_KEY))||0}catch(e){}
-
-// --- Wave ---
-const waveBaseY=VH*0.52;
-const waveAmp=45;
-const waveK=0.018;
-const waveAmp2=20;
-const waveK2=0.025;
-function waveY(x){
-  return waveBaseY+waveAmp*Math.sin(waveK*(x+scroll))+waveAmp2*Math.sin(waveK2*(x+scroll)*1.7+1.3);
+function playTone(freq, type, dur, vol, detune){
+  vol = vol || 0.4; detune = detune || 0;
+  const ac = getAudio();
+  const g = ac.createGain();
+  const o = ac.createOscillator();
+  o.type = type;
+  o.frequency.value = freq;
+  o.detune.value = detune;
+  g.gain.setValueAtTime(vol, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(); o.stop(ac.currentTime + dur);
 }
-function waveDY(x){
-  return waveAmp*waveK*Math.cos(waveK*(x+scroll))+waveAmp2*waveK2*1.7*Math.cos(waveK2*(x+scroll)*1.7+1.3);
+function playBeat(){
+  const ac = getAudio();
+  const g = ac.createGain();
+  const o = ac.createOscillator();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(80, ac.currentTime);
+  o.frequency.exponentialRampToValueAtTime(40, ac.currentTime + 0.12);
+  g.gain.setValueAtTime(0.55, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.18);
+  o.connect(g); g.connect(ac.destination);
+  o.start(); o.stop(ac.currentTime + 0.18);
+  playTone(1200,'square',0.04,0.1);
+}
+function playPerfect(){ playTone(660,'sine',0.18,0.35); playTone(880,'sine',0.12,0.2); }
+function playGood(){ playTone(440,'sine',0.14,0.25); }
+function playMiss(){ playTone(160,'sawtooth',0.22,0.3); }
+function playCrash(){
+  const ac = getAudio();
+  const buf = ac.createBuffer(1, Math.floor(ac.sampleRate*0.5), ac.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(ac.sampleRate*0.1));
+  const s = ac.createBufferSource();
+  const g = ac.createGain(); g.gain.value = 0.7;
+  s.buffer = buf; s.connect(g); g.connect(ac.destination); s.start();
 }
 
-// --- Spawn ---
-function spawnRing(){
-  const x=VW+60+rng()*80;
-  rings.push({wx:x+scroll,radius:28+rng()*6,hitWindow:32+Math.max(0,18-gameTime*0.3),locked:false,missed:false,alpha:1,popScale:1,glow:0});
-}
-function spawnRock(){
-  const x=VW+50+rng()*100;
-  const baseW=waveY(x);
-  const yOff=20+rng()*40;
-  rocks.push({wx:x+scroll,y:baseW+yOff,r:12+rng()*10,hue:20+rng()*30});
-}
+// ── Canvas Setup ─────────────────────────────────────────────────────────────
+const wrap = document.getElementById('wrap');
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, DPR;
 
-// --- Particles ---
-function emitParticles(x,y,count,hue,spread,life){
-  for(let i=0;i<count;i++){
-    const a=rng()*Math.PI*2;
-    const sp=spread*(0.3+rng()*0.7);
-    particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-1,life:life*(0.5+rng()*0.5),maxLife:life,hue:hue+rng()*30,size:2+rng()*3,alpha:1});
+function resize(){
+  DPR = window.devicePixelRatio || 1;
+  const r = wrap.getBoundingClientRect();
+  W = r.width; H = r.height;
+  canvas.width = Math.round(W * DPR);
+  canvas.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+resize();
+window.addEventListener('resize', function(){ resize(); if(gameState==='playing') initTunnel(); });
+
+// ── State ────────────────────────────────────────────────────────────────────
+let gameState = 'start';
+let score = 0;
+let bestScore = parseInt(localStorage.getItem('tideTap_best')||'0');
+let deathReason = '';
+let gameHue = 200;
+let comboFlashT = 0;
+
+// ── Player ───────────────────────────────────────────────────────────────────
+const player = {
+  x:0, y:0, vy:0,
+  speed:BASE_SPEED,
+  oxygen: OXY_MAX,
+  combo: 0,
+  multiplier: 1,
+  penaltyT: 0,
+  invincT: 0
+};
+
+// ── Beat / Pulse ─────────────────────────────────────────────────────────────
+const beat = {
+  bpm: BASE_BPM,
+  period: 0,
+  phase: 0,
+  lastBeat: 0,
+  rings: []
+};
+
+// ── Tunnel ───────────────────────────────────────────────────────────────────
+let tunnel = [];
+let tunnelOffset = 0;
+
+// ── Hazards ──────────────────────────────────────────────────────────────────
+let hazards = [];
+
+// ── Particles ────────────────────────────────────────────────────────────────
+let particles = [];
+
+// ── Shockwaves ────────────────────────────────────────────────────────────────
+let shockwaves = [];
+
+// ── Effects ──────────────────────────────────────────────────────────────────
+let shake = { trauma: 0 };
+let vignetteAlpha = 0;
+
+// ── HUD elements ─────────────────────────────────────────────────────────────
+const hudScore  = document.getElementById('hud-score');
+const hudBest   = document.getElementById('hud-best');
+const oxyBar    = document.getElementById('oxy-bar');
+const comboBadge = document.getElementById('combo-badge');
+
+function updateHUD(){
+  hudScore.textContent = Math.floor(score);
+  hudBest.textContent  = 'Best: ' + bestScore + (challengeScore ? '  |  Beat: '+challengeScore : '');
+  const op = player.oxygen / OXY_MAX;
+  oxyBar.style.width = (op*100)+'%';
+  const rr = op<0.3 ? 255 : Math.round(255*(1-op)*3);
+  const gg = op>0.5 ? 255 : Math.round(255*op*2);
+  oxyBar.style.backgroundColor = 'rgb('+rr+','+gg+',255)';
+  if(player.combo >= 2){
+    comboBadge.textContent = 'x'+player.multiplier;
+    comboBadge.style.opacity = '1';
+  } else {
+    comboBadge.style.opacity = '0';
   }
 }
-function emitFoam(x,y,count){
-  for(let i=0;i<count;i++){
-    foamParticles.push({x:x+rng()*20-10,y:y+rng()*10,vx:-(0.3+rng()*0.5),vy:-rng()*0.5,life:0.8+rng()*0.8,maxLife:1.6,alpha:0.4+rng()*0.3,size:1.5+rng()*2.5});
+
+// ── Tunnel generation ────────────────────────────────────────────────────────
+function tunnelGap(dist){
+  const t = Math.min(dist/8000, 1);
+  return BASE_GAP - (BASE_GAP - MIN_GAP)*t*t;
+}
+function initTunnel(){
+  tunnel = [];
+  tunnelOffset = 0;
+  const segs = Math.ceil(W/SEG_W) + 20;
+  let cy = H/2, dcdy = 0;
+  for(let i=0; i<segs; i++){
+    cy += dcdy;
+    dcdy += (Math.random()-0.5)*2.5;
+    dcdy *= 0.85;
+    cy = Math.max(H*0.2, Math.min(H*0.8, cy));
+    const hg = tunnelGap(0)/2;
+    tunnel.push({x: i*SEG_W, centerY: cy, halfGap: hg});
+  }
+}
+function extendTunnel(dist){
+  const maxX = tunnel[tunnel.length-1].x;
+  if(maxX < tunnelOffset + W + SEG_W*10){
+    const last = tunnel[tunnel.length-1];
+    let cy = last.centerY;
+    const hg = tunnelGap(dist)/2;
+    cy += (Math.random()-0.5)*30;
+    if(dist > 2000 && Math.random()<0.3) cy += (Math.random()-0.5)*60;
+    cy = Math.max(H*0.15, Math.min(H*0.85, cy));
+    tunnel.push({x: last.x+SEG_W, centerY: cy, halfGap: hg});
+  }
+  while(tunnel.length>0 && tunnel[0].x < tunnelOffset - SEG_W*2) tunnel.shift();
+}
+
+function getTunnelAt(worldX){
+  for(let i=0;i<tunnel.length-1;i++){
+    if(tunnel[i].x <= worldX && tunnel[i+1].x > worldX){
+      const t = (worldX - tunnel[i].x)/SEG_W;
+      return {
+        centerY: tunnel[i].centerY*(1-t) + tunnel[i+1].centerY*t,
+        halfGap:  tunnel[i].halfGap*(1-t)  + tunnel[i+1].halfGap*t
+      };
+    }
+  }
+  return {centerY: H/2, halfGap: BASE_GAP/2};
+}
+
+// ── Hazard spawning ──────────────────────────────────────────────────────────
+function spawnHazard(dist){
+  const density = Math.min(1, dist/5000);
+  if(Math.random() > 0.012 + density*0.02) return;
+  const spawnX = tunnelOffset + W + MINE_R + 20;
+  const tun = getTunnelAt(spawnX);
+  const spread = tun.halfGap * 0.7;
+  const yOff = (Math.random()*2-1)*spread;
+  hazards.push({
+    x: spawnX,
+    y: tun.centerY + yOff,
+    r: MINE_R + Math.random()*6,
+    vx: -(0.4 + Math.random()*0.5),
+    vy: (Math.random()-0.5)*0.6,
+    repelled: false,
+    hue: Math.random()*360
+  });
+}
+
+// ── Particles ────────────────────────────────────────────────────────────────
+function spawnParticles(x, y, preset){
+  if(preset==='perfect'){
+    for(let i=0;i<18;i++){
+      const a = Math.PI*2*i/18;
+      const sp = 2+Math.random()*4;
+      particles.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,maxLife:1,r:3+Math.random()*3,color:'hsl('+(180+Math.random()*40)+',100%,70%)'});
+    }
+  } else if(preset==='good'){
+    for(let i=0;i<10;i++){
+      const a = Math.PI*2*Math.random();
+      const sp = 1+Math.random()*3;
+      particles.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,maxLife:0.7,r:2+Math.random()*2,color:'hsl('+(120+Math.random()*60)+',90%,65%)'});
+    }
+  } else if(preset==='miss'){
+    for(let i=0;i<8;i++){
+      const a = Math.PI*2*Math.random();
+      const sp = 0.5+Math.random()*2;
+      particles.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,maxLife:0.5,r:3+Math.random()*3,color:'hsl('+(220+Math.random()*40)+',60%,40%)'});
+    }
+  } else if(preset==='crash'){
+    for(let i=0;i<30;i++){
+      const a = Math.PI*2*Math.random();
+      const sp = 1+Math.random()*8;
+      particles.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,life:1,maxLife:1.5,r:2+Math.random()*6,color:'hsl('+(Math.random()*40+10)+',100%,'+(50+Math.random()*30)+'%)'});
+    }
   }
 }
 
-// --- Input ---
-let tapQueued=false;
+// ── Shockwave ─────────────────────────────────────────────────────────────────
+function emitShockwave(x, y, quality){
+  const power = quality==='perfect' ? 1.0 : 0.6;
+  shockwaves.push({x:x,y:y,r:SUB_R,maxR:120*power,life:1,power:power});
+  hazards.forEach(function(h){
+    const dx=h.x-x, dy=h.y-y;
+    const d=Math.sqrt(dx*dx+dy*dy);
+    if(d<130*power && d>1){
+      const force = power*8*(1-d/(130*power));
+      h.vx += dx/d*force;
+      h.vy += dy/d*force;
+      h.repelled = true;
+    }
+  });
+}
+
+// ── Game Init ─────────────────────────────────────────────────────────────────
+function initGame(){
+  player.x = W*0.22;
+  player.y = H/2;
+  player.vy = 0;
+  player.speed = BASE_SPEED;
+  player.oxygen = OXY_MAX;
+  player.combo = 0;
+  player.multiplier = 1;
+  player.penaltyT = 0;
+  player.invincT = 0;
+  score = 0;
+  gameHue = 200;
+  beat.bpm = BASE_BPM;
+  beat.period = 60000/BASE_BPM;
+  beat.phase = 0;
+  beat.lastBeat = performance.now();
+  beat.rings = [];
+  hazards = [];
+  particles = [];
+  shockwaves = [];
+  shake.trauma = 0;
+  vignetteAlpha = 0;
+  tunnelOffset = 0;
+  initTunnel();
+  updateHUD();
+}
+
+// ── Tap handler ──────────────────────────────────────────────────────────────
 function onTap(){
-  if(state==='start'){startGame();return}
-  if(state==='gameover'){
-    // Delay restart slightly to avoid accidental share-button taps
-    startGame();return;
+  if(gameState === 'start'){
+    gameState = 'playing';
+    getAudio();
+    initGame();
+    return;
   }
-  if(state==='playing')tapQueued=true;
+  if(gameState === 'gameover'){
+    gameState = 'playing';
+    initGame();
+    return;
+  }
+  if(gameState !== 'playing') return;
+  if(player.penaltyT > 0.3) return;
+
+  const phase = beat.phase;
+  const dist = Math.min(phase, 1-phase);
+  let quality;
+  if(dist <= TIMING_WINDOW_PERFECT) quality = 'perfect';
+  else if(dist <= TIMING_WINDOW_GOOD) quality = 'good';
+  else quality = 'miss';
+
+  if(quality === 'perfect'){
+    player.combo++;
+    player.multiplier = Math.min(8, 1 + Math.floor(player.combo/3));
+    player.speed = Math.min(MAX_SPEED, player.speed + 0.6);
+    player.oxygen = Math.min(OXY_MAX, player.oxygen + OXY_REFILL_PERFECT);
+    player.vy *= 0.3;
+    emitShockwave(player.x, player.y, 'perfect');
+    spawnParticles(player.x, player.y, 'perfect');
+    playPerfect();
+    shake.trauma = Math.max(shake.trauma, 0.15);
+    score += 50 * player.multiplier;
+  } else if(quality === 'good'){
+    player.combo++;
+    player.multiplier = Math.min(8, 1 + Math.floor(player.combo/3));
+    player.speed = Math.min(MAX_SPEED, player.speed + 0.3);
+    emitShockwave(player.x, player.y, 'good');
+    spawnParticles(player.x, player.y, 'good');
+    playGood();
+    score += 20 * player.multiplier;
+  } else {
+    player.combo = 0;
+    player.multiplier = 1;
+    player.penaltyT = 0.5;
+    player.vy += (Math.random()-0.5)*6;
+    spawnParticles(player.x, player.y, 'miss');
+    playMiss();
+  }
+  comboFlashT = 0.5;
 }
-canvas.addEventListener('pointerdown',e=>{e.preventDefault();onTap()});
-document.addEventListener('keydown',e=>{
-  if(e.code==='Space'||e.code==='Enter'){e.preventDefault();onTap()}
+
+// ── Input ────────────────────────────────────────────────────────────────────
+canvas.addEventListener('pointerdown', function(e){ e.preventDefault(); onTap(); });
+document.addEventListener('keydown', function(e){
+  if(e.code==='Space'||e.code==='Enter'){ e.preventDefault(); onTap(); }
 });
 
-// Prevent space scroll
-window.addEventListener('keydown',e=>{if(e.code==='Space')e.preventDefault()});
-
-// --- Game lifecycle ---
-function startGame(){
-  state='playing';
-  score=0;combo=0;mult=1;missStreak=0;
-  speed=baseSpeed;scroll=0;gameTime=0;
-  rings=[];rocks=[];particles=[];foamParticles=[];
-  ringSpawnTimer=0;rockSpawnTimer=0;
-  shakeMag=0;vignetteAlpha=0;desatFlash=0;
-  rng=mulberry32(dailySeed);
-  shareOverlay.style.display='none';
-  spawnRing();
+// ── Near-miss scoring ────────────────────────────────────────────────────────
+function checkNearMiss(){
+  hazards.forEach(function(h){
+    if(h.repelled) return;
+    const dx=h.x-player.x, dy=h.y-player.y;
+    const d=Math.sqrt(dx*dx+dy*dy);
+    const closeRange = SUB_R + h.r + 30;
+    if(d < closeRange && d > SUB_R + h.r + 2 && player.speed > BASE_SPEED+1){
+      score += 5 * player.multiplier;
+    }
+  });
 }
 
-function gameOver(){
-  state='gameover';
-  shakeMag=12;
-  vignetteAlpha=0.6;
-  desatFlash=1;
-  if(score>bestScore){
-    bestScore=score;
-    try{localStorage.setItem(LS_KEY,bestScore.toString())}catch(e){}
+// ── Collision detection ──────────────────────────────────────────────────────
+function checkCollisions(){
+  if(player.invincT > 0) return false;
+  for(let i=0;i<hazards.length;i++){
+    const h = hazards[i];
+    const dx=h.x-player.x, dy=h.y-player.y;
+    const d2=dx*dx+dy*dy;
+    if(d2 < (SUB_R+h.r)*(SUB_R+h.r)) return 'mine';
   }
-  // Show share after short delay
-  setTimeout(()=>{if(state==='gameover')shareOverlay.style.display='block'},600);
+  const tun = getTunnelAt(tunnelOffset + player.x);
+  const topWall = tun.centerY - tun.halfGap;
+  const botWall = tun.centerY + tun.halfGap;
+  if(player.y - SUB_R < topWall || player.y + SUB_R > botWall) return 'wall';
+  return false;
 }
 
-// --- Share ---
-shareBtn.addEventListener('pointerdown',e=>{
-  e.stopPropagation();
-  const url=`https://balinti.github.io/tide-tap/?score=${score}&mult=${mult}&seed=${dailySeed}`;
-  const text=`I scored ${score} (x${mult} combo) in Tide Tap: Crest Chain! Can you beat me?`;
+// ── Game Over ────────────────────────────────────────────────────────────────
+function triggerDeath(reason){
+  deathReason = reason;
+  gameState = 'gameover';
+  playCrash();
+  shake.trauma = 1.0;
+  spawnParticles(player.x, player.y, 'crash');
+  if(score > bestScore){
+    bestScore = Math.floor(score);
+    localStorage.setItem('tideTap_best', bestScore);
+  }
+  updateHUD();
+}
+
+// ── Share ────────────────────────────────────────────────────────────────────
+let copyFeedback = false;
+let copyFeedbackT = 0;
+function shareScore(){
+  const url = location.origin + location.pathname + '?challenge=' + Math.floor(score);
+  const text = 'I scored '+Math.floor(score)+' in Tide Tap! Can you beat me?';
   if(navigator.share){
-    navigator.share({title:'Tide Tap: Crest Chain',text,url}).catch(()=>{});
-  }else{
-    navigator.clipboard.writeText(text+' '+url).then(()=>{
-      copiedToast.style.display='block';
-      setTimeout(()=>{copiedToast.style.display='none'},1800);
-    }).catch(()=>{});
+    navigator.share({title:'Tide Tap',text:text,url:url}).catch(function(){});
+  } else {
+    navigator.clipboard.writeText(text+'\n'+url).then(function(){
+      copyFeedback=true; copyFeedbackT=2;
+    }).catch(function(){});
   }
-});
-
-// --- Fixed-step update ---
-function update(){
-  const dt=STEP;
-  gameTime+=dt;
-  hueShift+=dt*15;
-
-  // Difficulty ramp
-  const diffT=gameTime;
-  const speedMult=1+diffT*0.012;
-  const effectiveSpeed=speed*speedMult;
-  scroll+=effectiveSpeed*60*dt;
-
-  // Ring interval decreases
-  ringInterval=Math.max(0.7,1.5-diffT*0.008);
-  rockInterval=Math.max(1.8,4-diffT*0.015);
-
-  // Surfer
-  surferY=waveY(surferX);
-  surferAngle=Math.atan2(waveDY(surferX),1)*0.6;
-
-  // Spawn rings
-  ringSpawnTimer+=dt;
-  if(ringSpawnTimer>=ringInterval){ringSpawnTimer=0;spawnRing()}
-
-  // Spawn rocks
-  rockSpawnTimer+=dt;
-  if(rockSpawnTimer>=rockInterval){rockSpawnTimer=0;spawnRock()}
-
-  // Handle tap
-  if(tapQueued){
-    tapQueued=false;
-    let hit=false;
-    for(let i=0;i<rings.length;i++){
-      const r=rings[i];
-      if(r.locked||r.missed)continue;
-      const sx=r.wx-scroll;
-      const dist=Math.abs(sx-surferX);
-      if(dist<r.hitWindow){
-        r.locked=true;
-        r.glow=1;
-        combo++;
-        mult=Math.min(1+Math.floor(combo/3),8);
-        missStreak=0;
-        speed=Math.min(speed+0.08,3.5);
-        const ry=waveY(sx);
-        emitParticles(sx,ry,12,180+hueShift%60,3,0.7);
-        shakeMag=Math.max(shakeMag,2);
-        hit=true;
-        break;
-      }
-    }
-    if(!hit){
-      // Tap miss penalty (small)
-      speed=Math.max(speed-0.05,baseSpeed*0.8);
-    }
-  }
-
-  // Update rings
-  for(let i=rings.length-1;i>=0;i--){
-    const r=rings[i];
-    const sx=r.wx-scroll;
-    if(r.locked){
-      r.popScale+=(1.4-r.popScale)*0.15;
-      r.glow*=0.93;
-      r.alpha-=dt*2;
-      if(r.alpha<=0){rings.splice(i,1);continue}
-    }else if(!r.missed&&sx<surferX-r.hitWindow){
-      // Missed
-      r.missed=true;
-      missStreak++;
-      combo=0;mult=1;
-      speed=Math.max(speed-0.3,baseSpeed*0.7);
-      vignetteAlpha=0.35;
-      desatFlash=0.5;
-      if(missStreak>=2){gameOver();return}
-    }
-    if(sx<-60){rings.splice(i,1)}
-  }
-
-  // Update rocks
-  const lethalSpeed=1.8+diffT*0.02;
-  for(let i=rocks.length-1;i>=0;i--){
-    const rk=rocks[i];
-    const sx=rk.wx-scroll;
-    if(sx<-60){rocks.splice(i,1);continue}
-    // Collision with surfer
-    const dx=sx-surferX,dy=rk.y-surferY;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<rk.r+10){
-      if(effectiveSpeed>lethalSpeed){
-        emitParticles(surferX,surferY,25,0,5,1);
-        gameOver();return;
-      }else{
-        speed=Math.max(speed-0.4,baseSpeed*0.5);
-        emitParticles(sx,rk.y,8,30,2,0.5);
-        rocks.splice(i,1);
-        continue;
-      }
-    }
-  }
-
-  // Score
-  score+=Math.round(effectiveSpeed*mult*dt*10);
-
-  // Particles
-  for(let i=particles.length-1;i>=0;i--){
-    const p=particles[i];
-    p.x+=p.vx;p.y+=p.vy;
-    p.vy+=0.06;
-    p.life-=dt;
-    p.alpha=Math.max(0,p.life/p.maxLife);
-    if(p.life<=0)particles.splice(i,1);
-  }
-
-  // Foam
-  if(rng()<0.3)emitFoam(surferX+5,surferY+4,1);
-  for(let i=foamParticles.length-1;i>=0;i--){
-    const f=foamParticles[i];
-    f.x+=f.vx;f.y+=f.vy;
-    f.life-=dt;
-    f.alpha*=0.98;
-    if(f.life<=0)foamParticles.splice(i,1);
-  }
-
-  // Shake decay
-  shakeMag*=shakeDecay;
-  if(shakeMag<0.1)shakeMag=0;
-  shakeX=(Math.random()-0.5)*shakeMag*2;
-  shakeY=(Math.random()-0.5)*shakeMag*2;
-
-  // Vignette/desat decay
-  vignetteAlpha*=0.96;
-  desatFlash*=0.94;
 }
 
-// --- Draw ---
-function draw(){
+// ── Draw helpers ─────────────────────────────────────────────────────────────
+function drawRoundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+function drawButton(label, x, y, w, h, hue, alpha){
+  if(alpha === undefined) alpha = 1;
   ctx.save();
-  // Shake
-  if(state==='playing'||state==='gameover'){
-    ctx.translate(shakeX,shakeY);
+  ctx.globalAlpha = alpha;
+  ctx.shadowColor = 'hsl('+hue+',100%,60%)';
+  ctx.shadowBlur = 18;
+  const g = ctx.createLinearGradient(x,y,x,y+h);
+  g.addColorStop(0, 'hsl('+hue+',80%,35%)');
+  g.addColorStop(1, 'hsl('+hue+',80%,22%)');
+  ctx.fillStyle = g;
+  drawRoundRect(x,y,w,h,12);
+  ctx.fill();
+  ctx.strokeStyle = 'hsl('+hue+',100%,55%)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#fff';
+  ctx.font = "bold 16px 'Segoe UI',Arial,sans-serif";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x+w/2, y+h/2);
+  ctx.restore();
+}
+
+// ── Draw background ──────────────────────────────────────────────────────────
+function drawBackground(hue){
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, 'hsl('+hue+',60%,4%)');
+  g.addColorStop(0.5, 'hsl('+(hue+20)+',50%,7%)');
+  g.addColorStop(1, 'hsl('+(hue+40)+',40%,5%)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+}
+
+// ── Draw tunnel ──────────────────────────────────────────────────────────────
+function drawTunnel(hue){
+  if(tunnel.length<2) return;
+  const topPts=[], botPts=[];
+  for(let i=0;i<tunnel.length;i++){
+    const seg = tunnel[i];
+    const sx = seg.x - tunnelOffset;
+    if(sx < -SEG_W*2 || sx > W+SEG_W*2) continue;
+    topPts.push({x:sx, y:seg.centerY - seg.halfGap});
+    botPts.push({x:sx, y:seg.centerY + seg.halfGap});
   }
+  if(topPts.length<2) return;
 
-  // Sky gradient
-  const skyGrad=ctx.createLinearGradient(0,0,0,VH);
-  const h1=(200+hueShift*0.3)%360;
-  const h2=(220+hueShift*0.2)%360;
-  skyGrad.addColorStop(0,`hsl(${h1},40%,8%)`);
-  skyGrad.addColorStop(0.5,`hsl(${h2},50%,12%)`);
-  skyGrad.addColorStop(1,`hsl(${(h2+10)%360},45%,6%)`);
-  ctx.fillStyle=skyGrad;
-  ctx.fillRect(0,0,VW,VH);
+  ctx.beginPath();
+  ctx.moveTo(topPts[0].x, 0);
+  ctx.lineTo(topPts[0].x, topPts[0].y);
+  for(let i=1;i<topPts.length;i++) ctx.lineTo(topPts[i].x, topPts[i].y);
+  ctx.lineTo(topPts[topPts.length-1].x, 0);
+  ctx.closePath();
+  const tg = ctx.createLinearGradient(0,0,0,H*0.5);
+  tg.addColorStop(0, 'hsl('+hue+',50%,12%)');
+  tg.addColorStop(1, 'hsl('+hue+',40%,8%)');
+  ctx.fillStyle = tg;
+  ctx.fill();
 
-  // Stars (decorative, static)
-  ctx.fillStyle='rgba(255,255,255,0.3)';
-  const starSeed=mulberry32(42);
-  for(let i=0;i<40;i++){
-    const sx=starSeed()*VW,sy=starSeed()*VH*0.45;
-    const ss=0.5+starSeed()*1.5;
-    const twinkle=0.3+0.7*Math.abs(Math.sin(gameTime*2+i));
-    ctx.globalAlpha=twinkle*0.4;
-    ctx.fillRect(sx,sy,ss,ss);
+  ctx.beginPath();
+  ctx.moveTo(botPts[0].x, H);
+  ctx.lineTo(botPts[0].x, botPts[0].y);
+  for(let i=1;i<botPts.length;i++) ctx.lineTo(botPts[i].x, botPts[i].y);
+  ctx.lineTo(botPts[botPts.length-1].x, H);
+  ctx.closePath();
+  const bg = ctx.createLinearGradient(0,H*0.5,0,H);
+  bg.addColorStop(0, 'hsl('+hue+',40%,8%)');
+  bg.addColorStop(1, 'hsl('+hue+',50%,12%)');
+  ctx.fillStyle = bg;
+  ctx.fill();
+
+  ctx.save();
+  ctx.shadowBlur = 14;
+  ctx.shadowColor = 'hsl('+(hue+60)+',80%,50%)';
+  ctx.strokeStyle = 'hsl('+(hue+60)+',80%,45%)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(topPts[0].x, topPts[0].y);
+  for(let i=1;i<topPts.length;i++) ctx.lineTo(topPts[i].x, topPts[i].y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(botPts[0].x, botPts[0].y);
+  for(let i=1;i<botPts.length;i++) ctx.lineTo(botPts[i].x, botPts[i].y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ── Draw sub ─────────────────────────────────────────────────────────────────
+function drawSub(hue, now){
+  const x=player.x, y=player.y;
+  ctx.save();
+  ctx.shadowColor = 'hsl('+hue+',100%,70%)';
+  ctx.shadowBlur = 22;
+  ctx.beginPath();
+  ctx.ellipse(x, y, SUB_R+4, SUB_R-2, 0, 0, Math.PI*2);
+  const sg = ctx.createRadialGradient(x-4,y-4,2,x,y,SUB_R+4);
+  sg.addColorStop(0, 'hsl('+hue+',80%,75%)');
+  sg.addColorStop(1, 'hsl('+(hue+20)+',60%,35%)');
+  ctx.fillStyle = sg;
+  ctx.fill();
+  ctx.fillStyle = 'hsl('+hue+',70%,55%)';
+  ctx.fillRect(x-4, y-SUB_R-8, 8, 8);
+  ctx.strokeStyle = 'hsl('+(hue+40)+',80%,65%)';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  const propT = now*0.004;
+  for(let i=0;i<3;i++){
+    const a = propT + i*Math.PI*2/3;
+    ctx.beginPath();
+    ctx.moveTo(x-(SUB_R+4), y);
+    ctx.lineTo(x-(SUB_R+4)+Math.cos(a)*8, y+Math.sin(a)*8);
+    ctx.stroke();
   }
-  ctx.globalAlpha=1;
+  ctx.beginPath();
+  ctx.arc(x+4, y-2, 4, 0, Math.PI*2);
+  ctx.fillStyle = 'hsla('+(hue+180)+',80%,80%,0.8)';
+  ctx.fill();
+  ctx.restore();
+}
 
-  // Moon
-  const moonX=VW*0.78,moonY=VH*0.12,moonR=22;
-  const moonGrad=ctx.createRadialGradient(moonX,moonY,moonR*0.2,moonX,moonY,moonR);
-  moonGrad.addColorStop(0,'rgba(255,250,230,0.9)');
-  moonGrad.addColorStop(0.7,'rgba(200,210,230,0.3)');
-  moonGrad.addColorStop(1,'rgba(200,210,230,0)');
-  ctx.fillStyle=moonGrad;
-  ctx.beginPath();ctx.arc(moonX,moonY,moonR*2,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='rgba(255,250,230,0.85)';
-  ctx.beginPath();ctx.arc(moonX,moonY,moonR,0,Math.PI*2);ctx.fill();
+// ── Draw beat rings ──────────────────────────────────────────────────────────
+function drawBeatRings(hue){
+  const r = (beat.phase * 80) + SUB_R + 8;
+  const alpha = 1 - beat.phase;
+  const perfR_lo = (0.5-TIMING_WINDOW_PERFECT)*80 + SUB_R + 8;
+  const perfR_hi = (0.5+TIMING_WINDOW_PERFECT)*80 + SUB_R + 8;
+  const goodR_lo = (0.5-TIMING_WINDOW_GOOD)*80 + SUB_R + 8;
+  const goodR_hi = (0.5+TIMING_WINDOW_GOOD)*80 + SUB_R + 8;
 
-  // Water layers
-  drawWaterLayers();
+  ctx.save();
+  ctx.globalAlpha = 0.2;
+  ctx.strokeStyle = 'hsl(120,100%,60%)';
+  ctx.lineWidth = (goodR_hi - goodR_lo);
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, (goodR_lo+goodR_hi)/2, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.strokeStyle = 'hsl(180,100%,70%)';
+  ctx.lineWidth = (perfR_hi - perfR_lo);
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, (perfR_lo+perfR_hi)/2, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.restore();
 
-  // Rocks
-  for(const rk of rocks){
-    const sx=rk.wx-scroll;
-    if(sx<-60||sx>VW+60)continue;
-    ctx.fillStyle=`hsl(${rk.hue},30%,25%)`;
-    ctx.beginPath();ctx.arc(sx,rk.y,rk.r,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle=`hsl(${rk.hue},25%,35%)`;
-    ctx.beginPath();ctx.arc(sx-rk.r*0.2,rk.y-rk.r*0.3,rk.r*0.5,0,Math.PI*2);ctx.fill();
-  }
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.85;
+  ctx.shadowColor = 'hsl('+hue+',100%,70%)';
+  ctx.shadowBlur = 12;
+  ctx.strokeStyle = 'hsl('+hue+',100%,70%)';
+  ctx.lineWidth = 2.5 - beat.phase;
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, r, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.restore();
 
-  // Rings
-  for(const r of rings){
-    const sx=r.wx-scroll;
-    if(sx<-60||sx>VW+80)continue;
-    const ry=waveY(sx)-30;
-    const scale=r.locked?r.popScale:1;
-    const baseHue=(180+hueShift)%360;
+  beat.rings.forEach(function(ring){
     ctx.save();
-    ctx.translate(sx,ry);
-    ctx.scale(scale,scale);
-    // Glow
-    if(r.glow>0.01){
-      const grd=ctx.createRadialGradient(0,0,r.radius*0.5,0,0,r.radius*2);
-      grd.addColorStop(0,`hsla(${baseHue},80%,70%,${r.glow*0.5})`);
-      grd.addColorStop(1,`hsla(${baseHue},80%,70%,0)`);
-      ctx.fillStyle=grd;
-      ctx.beginPath();ctx.arc(0,0,r.radius*2,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha = ring.life * 0.5;
+    ctx.strokeStyle = 'hsl('+(hue+40)+',80%,65%)';
+    ctx.lineWidth = 1.5 * ring.life;
+    ctx.beginPath();
+    ctx.arc(ring.x, ring.y, ring.r, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+// ── Draw hazards ─────────────────────────────────────────────────────────────
+function drawHazards(now){
+  hazards.forEach(function(h){
+    const sx = h.x - tunnelOffset;
+    ctx.save();
+    ctx.shadowColor = 'hsl('+h.hue+',100%,60%)';
+    ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.arc(sx, h.y, h.r, 0, Math.PI*2);
+    const mg = ctx.createRadialGradient(sx-h.r*0.3, h.y-h.r*0.3, 1, sx, h.y, h.r);
+    mg.addColorStop(0, 'hsl('+h.hue+',70%,55%)');
+    mg.addColorStop(1, 'hsl('+h.hue+',60%,20%)');
+    ctx.fillStyle = mg;
+    ctx.fill();
+    ctx.strokeStyle = 'hsl('+h.hue+',80%,50%)';
+    ctx.lineWidth = 2;
+    for(let i=0;i<8;i++){
+      const a = Math.PI*2*i/8 + now*0.001;
+      ctx.beginPath();
+      ctx.moveTo(sx+Math.cos(a)*h.r, h.y+Math.sin(a)*h.r);
+      ctx.lineTo(sx+Math.cos(a)*(h.r+6), h.y+Math.sin(a)*(h.r+6));
+      ctx.stroke();
     }
-    ctx.globalAlpha=r.alpha;
-    ctx.strokeStyle=r.missed?`hsla(0,70%,60%,${r.alpha})`:`hsla(${baseHue},70%,65%,${r.alpha})`;
-    ctx.lineWidth=r.locked?4:2.5;
-    ctx.beginPath();ctx.arc(0,0,r.radius,0,Math.PI*2);ctx.stroke();
-    // Inner dot
-    if(!r.locked&&!r.missed){
-      ctx.fillStyle=`hsla(${baseHue},80%,75%,${r.alpha*0.6})`;
-      ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();
-    }
+    ctx.restore();
+  });
+}
+
+// ── Draw shockwaves ──────────────────────────────────────────────────────────
+function drawShockwaves(hue){
+  shockwaves.forEach(function(sw){
+    ctx.save();
+    ctx.globalAlpha = sw.life * 0.6;
+    ctx.shadowColor = 'hsl('+(hue+40)+',100%,80%)';
+    ctx.shadowBlur = 20;
+    ctx.strokeStyle = 'hsl('+(hue+40)+',100%,80%)';
+    ctx.lineWidth = 3 * sw.life;
+    ctx.beginPath();
+    ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+// ── Draw particles ────────────────────────────────────────────────────────────
+function drawParticles(){
+  particles.forEach(function(p){
+    ctx.save();
+    ctx.globalAlpha = p.life/p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r * (p.life/p.maxLife), 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+// ── Draw vignette ─────────────────────────────────────────────────────────────
+function drawVignette(alpha, hue){
+  if(alpha <= 0) return;
+  const g = ctx.createRadialGradient(W/2,H/2,H*0.2,W/2,H/2,H*0.9);
+  g.addColorStop(0, 'hsla('+hue+',80%,20%,0)');
+  g.addColorStop(1, 'hsla('+hue+',80%,5%,'+alpha+')');
+  ctx.save();
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+  ctx.restore();
+}
+
+// ── Start Screen ─────────────────────────────────────────────────────────────
+function drawStart(t){
+  const hue = (t*20)%360;
+  drawBackground(hue);
+  ctx.save();
+  ctx.globalAlpha = 0.3;
+  drawTunnel(hue);
+  ctx.restore();
+
+  const demoPhase = (t*BASE_BPM/60)%1;
+  const dr = demoPhase*90 + 30;
+  ctx.save();
+  ctx.globalAlpha = (1-demoPhase)*0.8;
+  ctx.strokeStyle = 'hsl('+hue+',100%,70%)';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = 'hsl('+hue+',100%,70%)';
+  ctx.shadowBlur = 14;
+  ctx.beginPath();
+  ctx.arc(W/2, H/2, dr, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.shadowColor = 'hsl('+hue+',100%,60%)';
+  ctx.shadowBlur = 30;
+  ctx.fillStyle = '#fff';
+  ctx.font = "bold 52px 'Segoe UI',Arial,sans-serif";
+  ctx.fillText('TIDE TAP', W/2, H/2 - 90);
+  ctx.shadowBlur = 0;
+  ctx.font = "18px 'Segoe UI',Arial,sans-serif";
+  ctx.fillStyle = 'hsl('+hue+',80%,75%)';
+  ctx.fillText('Pilot your sub to the beat', W/2, H/2 - 52);
+  ctx.restore();
+
+  if(challengeScore){
+    ctx.save();
+    ctx.textAlign='center';
+    ctx.fillStyle='hsl(60,100%,70%)';
+    ctx.font="bold 20px 'Segoe UI',Arial,sans-serif";
+    ctx.fillText('Beat '+challengeScore+'!', W/2, H/2 - 20);
     ctx.restore();
   }
 
-  // Foam particles
-  for(const f of foamParticles){
-    ctx.globalAlpha=f.alpha;
-    ctx.fillStyle='rgba(200,230,255,0.6)';
-    ctx.beginPath();ctx.arc(f.x,f.y,f.size,0,Math.PI*2);ctx.fill();
-  }
-  ctx.globalAlpha=1;
-
-  // Surfer
-  drawSurfer();
-
-  // Particles
-  for(const p of particles){
-    ctx.globalAlpha=p.alpha;
-    ctx.fillStyle=`hsl(${p.hue},70%,60%)`;
-    ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.alpha,0,Math.PI*2);ctx.fill();
-  }
-  ctx.globalAlpha=1;
-
-  // Vignette
-  if(vignetteAlpha>0.01){
-    const vig=ctx.createRadialGradient(VW/2,VH/2,VW*0.2,VW/2,VH/2,VW*0.8);
-    vig.addColorStop(0,'rgba(0,0,0,0)');
-    vig.addColorStop(1,`rgba(180,30,30,${vignetteAlpha})`);
-    ctx.fillStyle=vig;
-    ctx.fillRect(0,0,VW,VH);
-  }
-
-  // Desaturation flash
-  if(desatFlash>0.02){
-    ctx.fillStyle=`rgba(0,0,0,${desatFlash*0.3})`;
-    ctx.fillRect(0,0,VW,VH);
-  }
-
-  // HUD
-  if(state==='playing'){
-    drawHUD();
-  }
-
-  ctx.restore();
-
-  // Overlays (drawn without shake)
-  if(state==='start')drawStartScreen();
-  if(state==='gameover')drawGameOverScreen();
-}
-
-function drawWaterLayers(){
-  // Back wave
-  ctx.fillStyle='rgba(15,50,100,0.4)';
-  ctx.beginPath();
-  ctx.moveTo(0,VH);
-  for(let x=0;x<=VW;x+=4){
-    const y=waveBaseY+20+waveAmp*0.6*Math.sin(waveK*0.8*(x+scroll*0.6)+2)+15*Math.sin(0.03*(x+scroll*0.4));
-    ctx.lineTo(x,y);
-  }
-  ctx.lineTo(VW,VH);ctx.closePath();ctx.fill();
-
-  // Main wave body
-  const wGrad=ctx.createLinearGradient(0,waveBaseY-waveAmp,0,VH);
-  const wh=(200+hueShift*0.2)%360;
-  wGrad.addColorStop(0,`hsla(${wh},60%,25%,0.9)`);
-  wGrad.addColorStop(0.4,`hsla(${(wh+10)%360},55%,18%,0.95)`);
-  wGrad.addColorStop(1,`hsla(${(wh+20)%360},50%,8%,1)`);
-  ctx.fillStyle=wGrad;
-  ctx.beginPath();
-  ctx.moveTo(0,VH);
-  for(let x=0;x<=VW;x+=3){
-    ctx.lineTo(x,waveY(x));
-  }
-  ctx.lineTo(VW,VH);ctx.closePath();ctx.fill();
-
-  // Wave crest highlight
-  ctx.strokeStyle=`hsla(${(wh+30)%360},50%,50%,0.25)`;
-  ctx.lineWidth=2;
-  ctx.beginPath();
-  for(let x=0;x<=VW;x+=3){
-    const y=waveY(x);
-    if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
-  }
-  ctx.stroke();
-
-  // Foam line on crest
-  ctx.strokeStyle='rgba(200,230,255,0.15)';
-  ctx.lineWidth=1;
-  ctx.beginPath();
-  for(let x=0;x<=VW;x+=3){
-    const y=waveY(x)-2;
-    if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
-  }
-  ctx.stroke();
-}
-
-function drawSurfer(){
+  const pulse = 0.7 + 0.3*Math.sin(t*3);
   ctx.save();
-  ctx.translate(surferX,surferY-12);
-  ctx.rotate(surferAngle);
+  ctx.globalAlpha = pulse;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fff';
+  ctx.font = "bold 22px 'Segoe UI',Arial,sans-serif";
+  ctx.fillText('Tap to Start', W/2, H/2 + 30);
+  ctx.restore();
 
-  // Board
-  ctx.fillStyle='#e8d8b0';
-  ctx.beginPath();
-  ctx.ellipse(0,6,16,3,0,0,Math.PI*2);
-  ctx.fill();
-  ctx.strokeStyle='#c4a870';
-  ctx.lineWidth=1;
-  ctx.stroke();
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = "14px 'Segoe UI',Arial,sans-serif";
+  ctx.fillText('Tap when the pulse ring hits the window', W/2, H/2 + 70);
+  ctx.fillText('Perfect = boost + oxygen refill', W/2, H/2 + 92);
+  ctx.fillText('Miss = turbulence + oxygen drain', W/2, H/2 + 114);
+  ctx.restore();
 
-  // Body
-  ctx.fillStyle='#2a6090';
-  ctx.beginPath();
-  ctx.ellipse(0,-5,5,8,0,0,Math.PI*2);
-  ctx.fill();
+  if(bestScore > 0){
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = "14px 'Segoe UI',Arial,sans-serif";
+    ctx.fillText('Best: '+bestScore, W/2, H - 60);
+    ctx.restore();
+  }
+}
 
-  // Head
-  ctx.fillStyle='#f0c8a0';
-  ctx.beginPath();
-  ctx.arc(0,-16,5.5,0,Math.PI*2);
-  ctx.fill();
+// ── Game Over Screen ──────────────────────────────────────────────────────────
+const shareBtn  = {x:0,y:0,w:0,h:0};
+const retryBtn  = {x:0,y:0,w:0,h:0};
+function drawGameOver(t){
+  const hue = (t*15)%360;
+  drawBackground(hue);
+  drawTunnel(hue);
+  drawParticles();
 
-  // Arms
-  ctx.strokeStyle='#f0c8a0';
-  ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(-4,-8);ctx.lineTo(-12,-4);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(4,-8);ctx.lineTo(12,-4);ctx.stroke();
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  ctx.fillRect(0,0,W,H);
+  ctx.restore();
 
-  // Speed trail
-  if(speed>1.5){
-    const ta=Math.min((speed-1.5)/2,0.5);
-    ctx.strokeStyle=`rgba(150,220,255,${ta})`;
-    ctx.lineWidth=1.5;
-    ctx.beginPath();
-    ctx.moveTo(-14,6);
-    ctx.lineTo(-14-speed*8,6+2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-14,8);
-    ctx.lineTo(-14-speed*6,10);
-    ctx.stroke();
+  ctx.save();
+  ctx.textAlign='center';
+  ctx.shadowColor = '#f44';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#f88';
+  ctx.font = "bold 24px 'Segoe UI',Arial,sans-serif";
+  const reason = deathReason==='mine'?'Crashed into a Mine!':deathReason==='wall'?'Hit the Wall!':'Out of Oxygen!';
+  ctx.fillText(reason, W/2, H/2-120);
+
+  ctx.shadowColor = 'hsl('+hue+',100%,70%)';
+  ctx.shadowBlur = 30;
+  ctx.fillStyle='#fff';
+  ctx.font="bold 60px 'Segoe UI',Arial,sans-serif";
+  ctx.fillText(Math.floor(score), W/2, H/2-50);
+
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(255,255,255,0.6)';
+  ctx.font="18px 'Segoe UI',Arial,sans-serif";
+  ctx.fillText('Best: '+bestScore, W/2, H/2+5);
+
+  if(score >= bestScore && score > 0){
+    ctx.fillStyle='hsl(60,100%,70%)';
+    ctx.font="bold 16px 'Segoe UI',Arial,sans-serif";
+    ctx.fillText('New Best!', W/2, H/2+28);
+  }
+  if(challengeScore && score > challengeScore){
+    ctx.fillStyle='hsl(120,100%,70%)';
+    ctx.font="bold 16px 'Segoe UI',Arial,sans-serif";
+    ctx.fillText('You beat the challenge ('+challengeScore+')!', W/2, H/2+52);
+  }
+  ctx.restore();
+
+  const bw=200, bh=44, cx=W/2;
+  retryBtn.x=cx-bw/2; retryBtn.y=H/2+80; retryBtn.w=bw; retryBtn.h=bh;
+  shareBtn.x=cx-bw/2; shareBtn.y=H/2+136; shareBtn.w=bw; shareBtn.h=bh;
+  drawButton('Tap to Retry', retryBtn.x, retryBtn.y, retryBtn.w, retryBtn.h, hue);
+  drawButton('Challenge a Friend', shareBtn.x, shareBtn.y, shareBtn.w, shareBtn.h, hue+120);
+
+  if(copyFeedback){
+    ctx.save();
+    ctx.textAlign='center';
+    ctx.fillStyle='hsl(120,100%,70%)';
+    ctx.font="14px 'Segoe UI',Arial,sans-serif";
+    ctx.fillText('Link copied!', W/2, shareBtn.y+shareBtn.h+20);
+    ctx.restore();
+  }
+}
+
+// ── Share button tap detection ────────────────────────────────────────────────
+canvas.addEventListener('pointerdown', function(e){
+  if(gameState!=='gameover') return;
+  const r = canvas.getBoundingClientRect();
+  const mx = (e.clientX-r.left)*(W/r.width);
+  const my = (e.clientY-r.top)*(H/r.height);
+  if(mx>=shareBtn.x && mx<=shareBtn.x+shareBtn.w && my>=shareBtn.y && my<=shareBtn.y+shareBtn.h){
+    e.stopPropagation();
+    shareScore();
+  }
+});
+
+// ── Main update ───────────────────────────────────────────────────────────────
+let lastTime = 0;
+let totalTime = 0;
+
+function update(now){
+  const rawDt = now - lastTime;
+  lastTime = now;
+  const dt = Math.min(rawDt, 50) / 1000;
+  totalTime += dt;
+  if(gameState==='playing') updateGame(dt, now);
+  if(copyFeedback){ copyFeedbackT-=dt; if(copyFeedbackT<=0) copyFeedback=false; }
+}
+
+function updateGame(dt, now){
+  beat.period = 60000/beat.bpm;
+  const elapsed = now - beat.lastBeat;
+  beat.phase = elapsed / beat.period;
+
+  if(beat.phase >= 1){
+    beat.lastBeat = now - (elapsed % beat.period);
+    beat.phase = (elapsed % beat.period) / beat.period;
+    beat.rings.push({x:player.x, y:player.y, r:SUB_R+8, life:1});
+    playBeat();
+  }
+
+  const distScore = tunnelOffset;
+  const diffT = Math.min(distScore/10000, 1);
+  beat.bpm = BASE_BPM + (MAX_BPM-BASE_BPM)*diffT;
+  player.speed = Math.max(BASE_SPEED, player.speed - dt*0.4);
+  player.speed = Math.max(BASE_SPEED + (MAX_SPEED-BASE_SPEED)*diffT*0.5, player.speed);
+
+  tunnelOffset += player.speed;
+  extendTunnel(distScore);
+
+  player.vy += 120 * dt;
+  player.vy -= 40 * dt;
+  player.vy += Math.sin(totalTime*(0.3 + diffT*0.5))*20*dt*(diffT*0.8+0.2);
+  player.vy *= (1 - 6*dt);
+  player.y += player.vy * dt;
+
+  if(player.penaltyT > 0) player.penaltyT -= dt;
+  if(player.invincT > 0)  player.invincT  -= dt;
+
+  const drain = player.penaltyT > 0 ? OXY_DRAIN_MISS : OXY_DRAIN_BASE;
+  player.oxygen -= drain * dt;
+  player.oxygen  = Math.max(0, player.oxygen);
+  if(player.oxygen <= 0){ triggerDeath('oxygen'); return; }
+
+  gameHue = (200 + diffT*120 + player.combo*5) % 360;
+  score += player.speed * player.multiplier * dt * 2;
+  checkNearMiss();
+
+  beat.rings.forEach(function(rr){ rr.r += 80*dt; rr.life -= 1.5*dt; });
+  beat.rings = beat.rings.filter(function(rr){ return rr.life>0; });
+
+  spawnHazard(distScore);
+  hazards.forEach(function(h){
+    h.x += h.vx * player.speed * 0.5 + h.vx;
+    h.y += h.vy;
+    h.vy *= 0.98;
+    h.vx *= 0.98;
+  });
+  hazards = hazards.filter(function(h){
+    const sx = h.x - tunnelOffset;
+    return sx > -MINE_R*3 && sx < W + MINE_R*3;
+  });
+
+  shockwaves.forEach(function(sw){ sw.r += 200*dt; sw.life -= 2.5*dt; });
+  shockwaves = shockwaves.filter(function(sw){ return sw.life>0; });
+
+  particles.forEach(function(p){ p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.vx*=0.97; p.life-=dt; });
+  particles = particles.filter(function(p){ return p.life>0; });
+
+  shake.trauma = Math.max(0, shake.trauma - 2*dt);
+
+  const oxyFrac = player.oxygen/OXY_MAX;
+  vignetteAlpha = oxyFrac < 0.3 ? (1-oxyFrac/0.3)*0.7 : 0;
+  if(player.penaltyT > 0) vignetteAlpha = Math.max(vignetteAlpha, 0.3);
+
+  if(comboFlashT>0) comboFlashT -= dt;
+
+  const hit = checkCollisions();
+  if(hit) triggerDeath(hit);
+  else updateHUD();
+}
+
+// ── Draw ─────────────────────────────────────────────────────────────────────
+function draw(now){
+  ctx.save();
+  const shakeAmt = shake.trauma * shake.trauma * 18;
+  if(shakeAmt > 0.1){
+    ctx.translate((Math.random()*2-1)*shakeAmt, (Math.random()*2-1)*shakeAmt);
+  }
+
+  if(gameState==='start'){
+    drawStart(now/1000);
+  } else if(gameState==='playing'){
+    drawBackground(gameHue);
+    drawTunnel(gameHue);
+    drawShockwaves(gameHue);
+    drawBeatRings(gameHue);
+    drawSub(gameHue, now);
+    drawHazards(now);
+    drawParticles();
+    drawVignette(vignetteAlpha, 0);
+    if(player.penaltyT > 0){
+      ctx.save();
+      ctx.globalAlpha = player.penaltyT * 0.3;
+      ctx.fillStyle = '#f04';
+      ctx.fillRect(0,0,W,H);
+      ctx.restore();
+    }
+  } else if(gameState==='gameover'){
+    drawGameOver(now/1000);
   }
 
   ctx.restore();
 }
 
-function drawHUD(){
-  // Score
-  ctx.fillStyle='rgba(255,255,255,0.9)';
-  ctx.font='bold 28px "Segoe UI",system-ui,sans-serif';
-  ctx.textAlign='left';
-  ctx.fillText(score.toString(),16,38);
-
-  // Multiplier
-  if(mult>1){
-    const mhue=(120+combo*15)%360;
-    ctx.fillStyle=`hsl(${mhue},70%,65%)`;
-    ctx.font='bold 20px "Segoe UI",system-ui,sans-serif';
-    ctx.fillText(`x${mult}`,16,62);
-  }
-
-  // Combo
-  if(combo>0){
-    ctx.fillStyle='rgba(255,255,255,0.5)';
-    ctx.font='14px "Segoe UI",system-ui,sans-serif';
-    ctx.fillText(`${combo} chain`,16,80);
-  }
-
-  // Best
-  ctx.fillStyle='rgba(255,255,255,0.35)';
-  ctx.font='13px "Segoe UI",system-ui,sans-serif';
-  ctx.textAlign='right';
-  ctx.fillText(`Best: ${bestScore}`,VW-16,34);
-
-  // Miss indicators
-  if(missStreak>0){
-    ctx.fillStyle='rgba(255,80,80,0.7)';
-    ctx.font='bold 14px "Segoe UI",system-ui,sans-serif';
-    ctx.textAlign='right';
-    ctx.fillText(`Miss ${missStreak}/2`,VW-16,58);
-  }
-
-  // Speed bar
-  const barW=80,barH=4,barX=VW-16-barW,barY=68;
-  ctx.fillStyle='rgba(255,255,255,0.1)';
-  ctx.fillRect(barX,barY,barW,barH);
-  const sf=Math.min(speed/3.5,1);
-  const bh=sf>0.7?0:(sf>0.5?60:200);
-  ctx.fillStyle=`hsl(${bh},60%,55%)`;
-  ctx.fillRect(barX,barY,barW*sf,barH);
-}
-
-function drawStartScreen(){
-  // Dim overlay
-  ctx.fillStyle='rgba(10,22,40,0.7)';
-  ctx.fillRect(0,0,VW,VH);
-
-  // Title
-  ctx.fillStyle='#fff';
-  ctx.font='bold 36px "Segoe UI",system-ui,sans-serif';
-  ctx.textAlign='center';
-  ctx.fillText('Tide Tap',VW/2,VH*0.3);
-
-  ctx.fillStyle='rgba(100,200,255,0.8)';
-  ctx.font='16px "Segoe UI",system-ui,sans-serif';
-  ctx.fillText('Crest Chain',VW/2,VH*0.3+30);
-
-  // Challenge line
-  if(urlScore>0){
-    ctx.fillStyle='rgba(255,200,100,0.85)';
-    ctx.font='bold 15px "Segoe UI",system-ui,sans-serif';
-    ctx.fillText(`Beat this: ${urlScore} (x${urlMult})`,VW/2,VH*0.3+65);
-  }
-
-  // Today's Tide
-  ctx.fillStyle='rgba(255,255,255,0.35)';
-  ctx.font='12px "Segoe UI",system-ui,sans-serif';
-  ctx.fillText(`Today's Tide #${dailySeed%10000}`,VW/2,VH*0.3+90);
-
-  // Instructions
-  const instY=VH*0.52;
-  ctx.fillStyle='rgba(255,255,255,0.6)';
-  ctx.font='14px "Segoe UI",system-ui,sans-serif';
-  ctx.fillText('Tap when the ring meets the surfer',VW/2,instY);
-  ctx.fillText('Chain hits for combo multiplier',VW/2,instY+22);
-  ctx.fillText('Miss 2 rings = wipeout!',VW/2,instY+44);
-  ctx.fillText('Avoid rocks at high speed',VW/2,instY+66);
-
-  // Best
-  if(bestScore>0){
-    ctx.fillStyle='rgba(255,255,255,0.5)';
-    ctx.font='15px "Segoe UI",system-ui,sans-serif';
-    ctx.fillText(`Best: ${bestScore}`,VW/2,VH*0.78);
-  }
-
-  // Prompt
-  const pulse=0.6+0.4*Math.abs(Math.sin(Date.now()*0.003));
-  ctx.fillStyle=`rgba(255,255,255,${pulse})`;
-  ctx.font='bold 18px "Segoe UI",system-ui,sans-serif';
-  ctx.fillText('Tap to Start',VW/2,VH*0.88);
-}
-
-function drawGameOverScreen(){
-  ctx.fillStyle='rgba(10,22,40,0.75)';
-  ctx.fillRect(0,0,VW,VH);
-
-  ctx.fillStyle='rgba(255,100,100,0.9)';
-  ctx.font='bold 30px "Segoe UI",system-ui,sans-serif';
-  ctx.textAlign='center';
-  ctx.fillText('Wipeout!',VW/2,VH*0.3);
-
-  ctx.fillStyle='#fff';
-  ctx.font='bold 42px "Segoe UI",system-ui,sans-serif';
-  ctx.fillText(score.toString(),VW/2,VH*0.42);
-
-  ctx.fillStyle='rgba(255,255,255,0.5)';
-  ctx.font='16px "Segoe UI",system-ui,sans-serif';
-  ctx.fillText(`Best chain: x${mult}`,VW/2,VH*0.48);
-
-  if(score>=bestScore&&score>0){
-    ctx.fillStyle='rgba(255,200,50,0.9)';
-    ctx.font='bold 16px "Segoe UI",system-ui,sans-serif';
-    ctx.fillText('New Best!',VW/2,VH*0.54);
-  }else{
-    ctx.fillStyle='rgba(255,255,255,0.4)';
-    ctx.font='14px "Segoe UI",system-ui,sans-serif';
-    ctx.fillText(`Best: ${bestScore}`,VW/2,VH*0.54);
-  }
-
-  const pulse=0.5+0.5*Math.abs(Math.sin(Date.now()*0.003));
-  ctx.fillStyle=`rgba(255,255,255,${pulse})`;
-  ctx.font='bold 17px "Segoe UI",system-ui,sans-serif';
-  ctx.fillText('Tap to Retry',VW/2,VH*0.72);
-}
-
-// --- Main loop ---
-function loop(ts){
+// ── RAF loop ──────────────────────────────────────────────────────────────────
+function loop(now){
+  update(now);
+  draw(now);
   requestAnimationFrame(loop);
-  if(!lastTime){lastTime=ts;return}
-  let dtRaw=(ts-lastTime)/1000;
-  lastTime=ts;
-  if(dtRaw>0.033)dtRaw=0.033;
-
-  if(state==='playing'){
-    accumulator+=dtRaw;
-    let steps=0;
-    while(accumulator>=STEP&&steps<8){
-      update();
-      accumulator-=STEP;
-      steps++;
-      if(state!=='playing')break;
-    }
-  }else{
-    // Gentle animation for menus
-    gameTime+=dtRaw;
-    hueShift+=dtRaw*10;
-    scroll+=30*dtRaw;
-  }
-
-  draw();
 }
-requestAnimationFrame(loop);
+
+hudBest.textContent = 'Best: '+bestScore+(challengeScore?' | Beat '+challengeScore:'');
+initTunnel();
+requestAnimationFrame(function(t){ lastTime=t; requestAnimationFrame(loop); });
 
 })();
 </script>
